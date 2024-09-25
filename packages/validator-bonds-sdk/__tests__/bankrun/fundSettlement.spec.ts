@@ -10,6 +10,7 @@ import {
   deserializeStakeState,
   getRentExemptStake,
   Config,
+  configureConfigInstruction,
 } from '../../src'
 import {
   BankrunExtendedProvider,
@@ -20,6 +21,7 @@ import {
   warpToNextEpoch,
 } from '@marinade.finance/bankrun-utils'
 import {
+  executeConfigureConfigInstruction,
   executeInitBondInstruction,
   executeInitConfigInstruction,
   executeInitSettlement,
@@ -48,6 +50,7 @@ import {
 } from '@marinade.finance/web3js-common'
 import { verifyError } from '@marinade.finance/anchor-common'
 import { initBankrunTest, delegateAndFund } from './bankrun'
+import assert from 'node:assert'
 
 describe('Validator Bonds fund settlement', () => {
   const epochsToClaimSettlement = 3
@@ -56,6 +59,7 @@ describe('Validator Bonds fund settlement', () => {
   let configAccount: PublicKey
   let config: Config
   let operatorAuthority: Keypair
+  let adminAuthority: Keypair
   let validatorIdentity: Keypair
   let bondAccount: PublicKey
   let voteAccount: PublicKey
@@ -70,13 +74,21 @@ describe('Validator Bonds fund settlement', () => {
   })
 
   beforeEach(async () => {
-    ;({ configAccount, operatorAuthority } = await executeInitConfigInstruction(
+    ;({ configAccount, operatorAuthority, adminAuthority } = await executeInitConfigInstruction(
       {
         program,
         provider,
         epochsToClaimSettlement,
       }
     ))
+    const newMinimumStakeLamports = 1;
+    await executeConfigureConfigInstruction({
+      program,
+      provider,
+      configAccount,
+      adminAuthority,
+      newMinimumStakeLamports,
+    })
     config = await getConfig(program, configAccount)
     ;({ voteAccount, validatorIdentity } = await createVoteAccount({
       provider,
@@ -92,6 +104,7 @@ describe('Validator Bonds fund settlement', () => {
     rentCollector = Keypair.generate()
     stakeAccountMinimalAmount =
       rentExemptStake + config.minimumStakeLamports.toNumber()
+    assert(config.minimumStakeLamports.toNumber() === newMinimumStakeLamports)
   })
 
   it('fund settlement fully with precise amount', async () => {

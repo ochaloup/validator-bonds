@@ -23,6 +23,11 @@ import 'reflect-metadata'
 import BN from 'bn.js'
 import { U64_MAX } from '@marinade.finance/web3js-common'
 
+// Limit stake minimum delegation to 1 SOL
+// https://github.com/solana-labs/solana/issues/22559
+// https://github.com/solana-labs/solana/issues/24357
+// 9onWzzvCzNC2jfhxxeqRgs5q7nFAAKpCUvkj6T6GJK9i
+
 export async function initBankrunTest(
   programId?: PublicKey,
   additionalAccounts?: string[]
@@ -34,7 +39,7 @@ export async function initBankrunTest(
   const accountDirs = additionalAccounts
     ? [...baseAccountDir, ...additionalAccounts]
     : baseAccountDir
-  const provider = await testInit({ accountDirs })
+  const provider = await testInit({ accountDirs, deactivateFeatures: [new PublicKey('9onWzzvCzNC2jfhxxeqRgs5q7nFAAKpCUvkj6T6GJK9i')] })
   return {
     program: getProgram({ connection: provider, programId }),
     provider,

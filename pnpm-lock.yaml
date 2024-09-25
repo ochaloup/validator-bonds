@@ -106,8 +106,8 @@ importers:
         specifier: ^2.4.9
         version: 2.4.9(@coral-xyz/anchor@0.29.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(@marinade.finance/ts-common@2.4.9)(@marinade.finance/web3js-common@2.4.9(@marinade.finance/ts-common@2.4.9)(@solana/buffer-layout@4.0.1)(@solana/web3.js@1.93.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(bn.js@5.2.1)(borsh@0.7.0)(bs58@5.0.0))(@solana/web3.js@1.93.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(bn.js@5.2.1)
       '@marinade.finance/bankrun-utils':
-        specifier: ^2.4.9
-        version: 2.4.9(@marinade.finance/web3js-common@2.4.9(@marinade.finance/ts-common@2.4.9)(@solana/buffer-layout@4.0.1)(@solana/web3.js@1.93.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(bn.js@5.2.1)(borsh@0.7.0)(bs58@5.0.0))(@solana/web3.js@1.93.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(anchor-bankrun@0.2.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(class-transformer@0.5.1)(solana-bankrun@0.2.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))
+        specifier: file:/home/chalda/marinade/marinade-ts-cli/build/packages/lib/bankrun-utils/
+        version: file:../marinade-ts-cli/build/packages/lib/bankrun-utils(@marinade.finance/web3js-common@2.4.9(@marinade.finance/ts-common@2.4.9)(@solana/buffer-layout@4.0.1)(@solana/web3.js@1.93.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(bn.js@5.2.1)(borsh@0.7.0)(bs58@5.0.0))(@solana/web3.js@1.93.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(class-transformer@0.5.1)(dist@file:../anchor-bankrun/dist)(dist@file:../solana-bankrun/dist)
       '@marinade.finance/marinade-ts-sdk':
         specifier: ^5.0.10
         version: 5.0.10(@solana/web3.js@1.93.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(bn.js@5.2.1)(bufferutil@4.0.8)(fastestsmallesttextencoderdecoder@1.0.22)(jsbi@4.3.0)(utf-8-validate@5.0.10)
@@ -139,8 +139,8 @@ importers:
         specifier: ^4.2.1
         version: 4.2.1
       anchor-bankrun:
-        specifier: ^0.2.0
-        version: 0.2.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+        specifier: file:/home/chalda/marinade/anchor-bankrun/dist/
+        version: dist@file:../anchor-bankrun/dist
       bn.js:
         specifier: ^5.2.1
         version: 5.2.1
@@ -163,8 +163,8 @@ importers:
         specifier: ^0.2.1
         version: 0.2.1
       solana-bankrun:
-        specifier: ^0.2.0
-        version: 0.2.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+        specifier: file:/home/chalda/marinade/solana-bankrun/dist/
+        version: dist@file:../solana-bankrun/dist
       solana-spl-token-modern:
         specifier: npm:@solana/spl-token@^0.3.11
         version: '@solana/spl-token@0.3.11(@solana/web3.js@1.93.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(bufferutil@4.0.8)(fastestsmallesttextencoderdecoder@1.0.22)(utf-8-validate@5.0.10)'
@@ -597,15 +597,15 @@ packages:
       '@solana/web3.js': ^1.93.0
       bn.js: ^5.2.1
 
-  '@marinade.finance/bankrun-utils@2.4.9':
-    resolution: {integrity: sha512-zD8rxA8i8dyxAeJVZgGHrBBk/ikpZ8Db7NnmQEkjXC03Kz3jexrrVUDfPc/G9nZ+luYvyX6JSKpVNizu6EX4Jw==}
+  '@marinade.finance/bankrun-utils@file:../marinade-ts-cli/build/packages/lib/bankrun-utils':
+    resolution: {directory: ../marinade-ts-cli/build/packages/lib/bankrun-utils, type: directory}
     engines: {node: '>=16.0.0'}
     peerDependencies:
-      '@marinade.finance/web3js-common': 2.4.9
+      '@marinade.finance/web3js-common': 'workspace: 2.4.9'
       '@solana/web3.js': ^1.93.0
-      anchor-bankrun: ^0.2.0
+      anchor-bankrun: file:/home/chalda/marinade/anchor-bankrun/dist/
       class-transformer: ^0.5.1
-      solana-bankrun: ^0.2.0
+      solana-bankrun: file:/home/chalda/marinade/solana-bankrun/dist/
 
   '@marinade.finance/cli-common@2.4.9':
     resolution: {integrity: sha512-DBnlxr36bar3ZPZEFmrSe9Kb1QZA5LA85tyGB0jyE6U17gn4xCG7mPKnm+22n0jmtbp/wgl7jORrw3EwmE2+ow==}
@@ -1038,10 +1038,6 @@ packages:
   ajv@6.12.6:
     resolution: {integrity: sha512-j3fVLgvTo527anyYyJOGTYJbG+vnnQYvE0m5mmkc1TK+nxAppkCLMIL0aZ4dblVCNoGShhm+kzE4ZUykBoMg4g==}
 
-  anchor-bankrun@0.2.0:
-    resolution: {integrity: sha512-k/GIiYjkFzj10iluAXPjLjDInZtNNZ2FTcCTrtqgxwm5wofLbD8T0sy13LU9IfQSirj8/6eaTawDo+IvI03KRQ==}
-    engines: {node: '>= 10'}
-
   ansi-escapes@4.3.2:
     resolution: {integrity: sha512-gKXj5ALrKWQLsYG9jlTRmR/xKluxHV+Z9QEwNIgCfM1/uwPMCuzVVnh5mwTd+OuBZcwSIMbqssNWRm1lE51QaQ==}
     engines: {node: '>=8'}
@@ -1371,6 +1367,12 @@ packages:
   dir-glob@3.0.1:
     resolution: {integrity: sha512-WkrWp9GR4KXfKGYzOLmTuGVi1UWFfws377n9cc55/tb6DuqyF6pcQ5AbiHEshaDpY9v6oaSr2XCDidGmMwdzIA==}
     engines: {node: '>=8'}
+
+  dist@file:../anchor-bankrun/dist:
+    resolution: {directory: ../anchor-bankrun/dist, type: directory}
+
+  dist@file:../solana-bankrun/dist:
+    resolution: {directory: ../solana-bankrun/dist, type: directory}
 
   doctrine@3.0.0:
     resolution: {integrity: sha512-yS+Q5i3hBf7GBkd4KG8a7eBNNWNGLTaEwwYWUijIYM7zrlYDM0BFXHjjPWlWZ1Rg7UaddZeIDmi9jF3HmqiQ2w==}
@@ -2505,39 +2507,6 @@ packages:
   snake-case@3.0.4:
     resolution: {integrity: sha512-LAOh4z89bGQvl9pFfNF8V146i7o7/CqFPbqzYgP+yYzDIDeS9HaNFtXABamRW+AQzEVODcvE79ljJ+8a9YSdMg==}
 
-  solana-bankrun-darwin-arm64@0.2.0:
-    resolution: {integrity: sha512-ENQ5Z/CYeY8ZVWIc2VutY/gMlBaHi93/kDw9w0iVwewoV+/YpQmP2irwrshIKu6ggRPTF3Ehlh2V6fGVIYWcXw==}
-    engines: {node: '>= 10'}
-    cpu: [arm64]
-    os: [darwin]
-
-  solana-bankrun-darwin-universal@0.2.0:
-    resolution: {integrity: sha512-HE45TvZXzBipm1fMn87+fkHeIuQ/KFAi5G/S29y/TLuBYt4RDI935RkWiT0rEQ7KwnwO6Y1aTsOaQXldY5R7uQ==}
-    engines: {node: '>= 10'}
-    os: [darwin]
-
-  solana-bankrun-darwin-x64@0.2.0:
-    resolution: {integrity: sha512-42UsVrnac2Oo4UaIDo60zfI3Xn1i8W6fmcc9ixJQZNTtdO8o2/sY4mFxcJx9lhLMhda5FPHrQbGYgYdIs0kK0g==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [darwin]
-
-  solana-bankrun-linux-x64-gnu@0.2.0:
-    resolution: {integrity: sha512-WnqQjfBBdcI0ZLysjvRStI8gX7vm1c3CI6CC03lgkUztH+Chcq9C4LI9m2M8mXza8Xkn9ryeKAmX36Bx/yoVzg==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [linux]
-
-  solana-bankrun-linux-x64-musl@0.2.0:
-    resolution: {integrity: sha512-8mtf14ZBoah30+MIJBUwb5BlGLRZyK5cZhCkYnC/ROqaIDN8RxMM44NL63gTUIaNHsFwWGA9xR0KSeljeh3PKQ==}
-    engines: {node: '>= 10'}
-    cpu: [x64]
-    os: [linux]
-
-  solana-bankrun@0.2.0:
-    resolution: {integrity: sha512-TS6vYoO/9YJZng7oiLOVyuz8V7yLow5Hp4SLYWW71XM3702v+z9f1fvUBKudRfa4dfpta4tRNufApSiBIALxJQ==}
-    engines: {node: '>= 10'}
-
   sonic-boom@3.7.0:
     resolution: {integrity: sha512-IudtNvSqA/ObjN97tfgNmOKyDOs4dNcg4cUUsHDebqsgb8wGBBwb31LIgShNO8fye0dFI52X1+tFoKKI6Rq1Gg==}
 
@@ -3470,13 +3439,13 @@ snapshots:
       '@solana/web3.js': 1.93.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
       bn.js: 5.2.1
 
-  '@marinade.finance/bankrun-utils@2.4.9(@marinade.finance/web3js-common@2.4.9(@marinade.finance/ts-common@2.4.9)(@solana/buffer-layout@4.0.1)(@solana/web3.js@1.93.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(bn.js@5.2.1)(borsh@0.7.0)(bs58@5.0.0))(@solana/web3.js@1.93.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(anchor-bankrun@0.2.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(class-transformer@0.5.1)(solana-bankrun@0.2.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))':
+  '@marinade.finance/bankrun-utils@file:../marinade-ts-cli/build/packages/lib/bankrun-utils(@marinade.finance/web3js-common@2.4.9(@marinade.finance/ts-common@2.4.9)(@solana/buffer-layout@4.0.1)(@solana/web3.js@1.93.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(bn.js@5.2.1)(borsh@0.7.0)(bs58@5.0.0))(@solana/web3.js@1.93.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(class-transformer@0.5.1)(dist@file:../anchor-bankrun/dist)(dist@file:../solana-bankrun/dist)':
     dependencies:
       '@marinade.finance/web3js-common': 2.4.9(@marinade.finance/ts-common@2.4.9)(@solana/buffer-layout@4.0.1)(@solana/web3.js@1.93.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(bn.js@5.2.1)(borsh@0.7.0)(bs58@5.0.0)
       '@solana/web3.js': 1.93.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
-      anchor-bankrun: 0.2.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      anchor-bankrun: dist@file:../anchor-bankrun/dist
       class-transformer: 0.5.1
-      solana-bankrun: 0.2.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
+      solana-bankrun: dist@file:../solana-bankrun/dist
 
   '@marinade.finance/cli-common@2.4.9(@marinade.finance/ledger-utils@3.0.1(@ledgerhq/errors@6.16.2)(@ledgerhq/hw-app-solana@7.1.4)(@ledgerhq/hw-transport-node-hid-noevents@6.29.4)(@marinade.finance/ts-common@2.4.9)(@solana/web3.js@1.93.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)))(@marinade.finance/ts-common@2.4.9)(@marinade.finance/web3js-common@2.4.9(@marinade.finance/ts-common@2.4.9)(@solana/buffer-layout@4.0.1)(@solana/web3.js@1.93.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(bn.js@5.2.1)(borsh@0.7.0)(bs58@5.0.0))(@solana/web3.js@1.93.0(bufferutil@4.0.8)(utf-8-validate@5.0.10))(bn.js@5.2.1)(borsh@0.7.0)(bs58@5.0.0)(pino@8.21.0)(yaml@2.4.5)':
     dependencies:
@@ -4030,15 +3999,6 @@ snapshots:
       json-schema-traverse: 0.4.1
       uri-js: 4.4.1
 
-  anchor-bankrun@0.2.0(bufferutil@4.0.8)(utf-8-validate@5.0.10):
-    dependencies:
-      '@coral-xyz/anchor': 0.28.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
-      solana-bankrun: 0.2.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - utf-8-validate
-
   ansi-escapes@4.3.2:
     dependencies:
       type-fest: 0.21.3
@@ -4359,6 +4319,10 @@ snapshots:
   dir-glob@3.0.1:
     dependencies:
       path-type: 4.0.0
+
+  dist@file:../anchor-bankrun/dist: {}
+
+  dist@file:../solana-bankrun/dist: {}
 
   doctrine@3.0.0:
     dependencies:
@@ -5753,36 +5717,6 @@ snapshots:
     dependencies:
       dot-case: 3.0.4
       tslib: 2.6.2
-
-  solana-bankrun-darwin-arm64@0.2.0:
-    optional: true
-
-  solana-bankrun-darwin-universal@0.2.0:
-    optional: true
-
-  solana-bankrun-darwin-x64@0.2.0:
-    optional: true
-
-  solana-bankrun-linux-x64-gnu@0.2.0:
-    optional: true
-
-  solana-bankrun-linux-x64-musl@0.2.0:
-    optional: true
-
-  solana-bankrun@0.2.0(bufferutil@4.0.8)(utf-8-validate@5.0.10):
-    dependencies:
-      '@solana/web3.js': 1.93.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)
-      bs58: 4.0.1
-    optionalDependencies:
-      solana-bankrun-darwin-arm64: 0.2.0
-      solana-bankrun-darwin-universal: 0.2.0
-      solana-bankrun-darwin-x64: 0.2.0
-      solana-bankrun-linux-x64-gnu: 0.2.0
-      solana-bankrun-linux-x64-musl: 0.2.0
-    transitivePeerDependencies:
-      - bufferutil
-      - encoding
-      - utf-8-validate
 
   sonic-boom@3.7.0:
     dependencies:

@@ -96,6 +96,7 @@ export async function configureConfigInstruction({
       'configureConfigInstruction: method parameters provided no new property to configure'
     )
   }
+  console.log("ARgs", JSON.stringify(args))
 
   const instruction = await program.methods
     .configureConfig(args)
