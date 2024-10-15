@@ -11,7 +11,7 @@ use anchor_lang::solana_program::stake::program::ID as stake_program_id;
 use anchor_lang::solana_program::stake::state::{Delegation, Meta, Stake, StakeState};
 use anchor_lang::solana_program::stake_history::StakeHistoryEntry;
 use anchor_lang::solana_program::system_program::ID as system_program_id;
-use anchor_lang::solana_program::vote::program::id as vote_program_id;
+use anchor_lang::solana_program::vote::program::ID as vote_program_id;
 use anchor_spl::stake::StakeAccount;
 use std::ops::Deref;
 
@@ -49,7 +49,7 @@ fn get_from_validator_vote_account(
 ) -> Result<Pubkey> {
     require_keys_eq!(
         *vote_account.owner,
-        vote_program_id(),
+        vote_program_id,
         ErrorCode::InvalidVoteAccountProgramId
     );
     let validator_vote_data = &vote_account.data.borrow()[..];
@@ -198,7 +198,7 @@ pub fn check_stake_exist_and_activating_or_activated(
             deactivating,
         } = stake
             .delegation
-            .stake_activating_and_deactivating(epoch, Some(stake_history), None);
+            .stake_activating_and_deactivating(epoch, stake_history, None);
         if (effective == 0 && activating == 0) || deactivating > 0 {
             msg!(
                 "Stake account is neither activating nor activated: {:?}",
@@ -284,7 +284,7 @@ mod tests {
             Err(ErrorCode::InvalidVoteAccountProgramId.into())
         );
 
-        let owner = vote_program_id();
+        let owner = vote_program_id;
         let account = AccountInfo::new(
             &account_key,
             false,
@@ -313,7 +313,7 @@ mod tests {
         let (vote_init, mut serialized_data) = get_vote_account_data();
         let mut lamports = 10000_u64;
         let account_key = Pubkey::new_unique();
-        let owner = vote_program_id();
+        let owner = vote_program_id;
         let account = AccountInfo::new(
             &account_key,
             false,
@@ -756,7 +756,7 @@ mod tests {
                     deactivating,
                 } = stake.delegation.stake_activating_and_deactivating(
                     epoch,
-                    Some(stake_history),
+                    stake_history,
                     None,
                 );
 
