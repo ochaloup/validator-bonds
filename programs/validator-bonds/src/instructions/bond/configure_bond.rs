@@ -7,7 +7,7 @@ use crate::state::config::Config;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::vote::program::ID as vote_program_id;
 
-#[derive(AnchorDeserialize, AnchorSerialize)]
+#[derive(Debug, AnchorDeserialize, AnchorSerialize)]
 pub struct ConfigureBondArgs {
     /// New bond authority that can manage the bond account.
     pub bond_authority: Option<Pubkey>,

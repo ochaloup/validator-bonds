@@ -1,5 +1,11 @@
 use anchor_lang::prelude::*;
+use anchor_spl::associated_token::AssociatedToken;
+use anchor_spl::metadata::Metadata;
+use anchor_spl::stake::{Stake, StakeAccount};
+use anchor_spl::token::{Mint, Token, TokenAccount};
 use trident_client::fuzzing::{anchor_lang, FuzzingError};
+use {Account, Program, Pubkey, Signer, Sysvar, UncheckedAccount};
+
 pub struct InitConfigSnapshot<'info> {
     pub config: Option<Account<'info, validator_bonds::state::config::Config>>,
     pub rent_payer: Signer<'info>,
@@ -244,19 +250,17 @@ pub struct ClaimSettlementV2Snapshot<'info> {
 }
 impl<'info> InitConfigSnapshot<'info> {
     pub fn deserialize_option(
-        _program_id: &anchor_lang::prelude::Pubkey,
+        _program_id: &Pubkey,
         accounts: &'info mut [Option<AccountInfo<'info>>],
     ) -> core::result::Result<Self, FuzzingError> {
         let mut accounts_iter = accounts.iter();
-        let config: Option<
-            anchor_lang::accounts::account::Account<validator_bonds::state::config::Config>,
-        > = accounts_iter
+        let config: Option<Account<validator_bonds::state::config::Config>> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("config".to_string()))?
             .as_ref()
             .map(|acc| {
                 if acc.key() != *_program_id {
-                    anchor_lang::accounts::account::Account::try_from(acc)
+                    Account::try_from(acc)
                         .map_err(|_| FuzzingError::CannotDeserializeAccount("config".to_string()))
                 } else {
                     Err(FuzzingError::OptionalAccountNotProvided(
@@ -270,16 +274,16 @@ impl<'info> InitConfigSnapshot<'info> {
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("rent_payer".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::signer::Signer::try_from)
+            .map(Signer::try_from)
             .ok_or(FuzzingError::AccountNotFound("rent_payer".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("rent_payer".to_string()))?;
-        let system_program: anchor_lang::accounts::program::Program<System> = accounts_iter
+        let system_program: Program<System> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
                 "system_program".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::program::Program::try_from)
+            .map(Program::try_from)
             .ok_or(FuzzingError::AccountNotFound("system_program".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("system_program".to_string()))?;
         let event_authority = accounts_iter
@@ -305,17 +309,15 @@ impl<'info> InitConfigSnapshot<'info> {
 }
 impl<'info> ConfigureConfigSnapshot<'info> {
     pub fn deserialize_option(
-        _program_id: &anchor_lang::prelude::Pubkey,
+        _program_id: &Pubkey,
         accounts: &'info mut [Option<AccountInfo<'info>>],
     ) -> core::result::Result<Self, FuzzingError> {
         let mut accounts_iter = accounts.iter();
-        let config: anchor_lang::accounts::account::Account<
-            validator_bonds::state::config::Config,
-        > = accounts_iter
+        let config: Account<validator_bonds::state::config::Config> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("config".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("config".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("config".to_string()))?;
         let admin_authority: Signer<'_> = accounts_iter
@@ -324,7 +326,7 @@ impl<'info> ConfigureConfigSnapshot<'info> {
                 "admin_authority".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::signer::Signer::try_from)
+            .map(Signer::try_from)
             .ok_or(FuzzingError::AccountNotFound("admin_authority".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("admin_authority".to_string()))?;
         let event_authority = accounts_iter
@@ -349,24 +351,22 @@ impl<'info> ConfigureConfigSnapshot<'info> {
 }
 impl<'info> InitBondSnapshot<'info> {
     pub fn deserialize_option(
-        _program_id: &anchor_lang::prelude::Pubkey,
+        _program_id: &Pubkey,
         accounts: &'info mut [Option<AccountInfo<'info>>],
     ) -> core::result::Result<Self, FuzzingError> {
         let mut accounts_iter = accounts.iter();
-        let config: anchor_lang::accounts::account::Account<
-            validator_bonds::state::config::Config,
-        > = accounts_iter
+        let config: Account<validator_bonds::state::config::Config> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("config".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("config".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("config".to_string()))?;
         let vote_account = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("vote_account".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("vote_account".to_string()))?;
         let validator_identity: Option<Signer<'_>> = accounts_iter
             .next()
@@ -376,7 +376,7 @@ impl<'info> InitBondSnapshot<'info> {
             .as_ref()
             .map(|acc| {
                 if acc.key() != *_program_id {
-                    anchor_lang::accounts::signer::Signer::try_from(acc).map_err(|_| {
+                    Signer::try_from(acc).map_err(|_| {
                         FuzzingError::CannotDeserializeAccount("validator_identity".to_string())
                     })
                 } else {
@@ -387,15 +387,13 @@ impl<'info> InitBondSnapshot<'info> {
             })
             .transpose()
             .unwrap_or(None);
-        let bond: Option<
-            anchor_lang::accounts::account::Account<validator_bonds::state::bond::Bond>,
-        > = accounts_iter
+        let bond: Option<Account<validator_bonds::state::bond::Bond>> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
             .as_ref()
             .map(|acc| {
                 if acc.key() != *_program_id {
-                    anchor_lang::accounts::account::Account::try_from(acc)
+                    Account::try_from(acc)
                         .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))
                 } else {
                     Err(FuzzingError::OptionalAccountNotProvided("bond".to_string()))
@@ -407,16 +405,16 @@ impl<'info> InitBondSnapshot<'info> {
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("rent_payer".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::signer::Signer::try_from)
+            .map(Signer::try_from)
             .ok_or(FuzzingError::AccountNotFound("rent_payer".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("rent_payer".to_string()))?;
-        let system_program: anchor_lang::accounts::program::Program<System> = accounts_iter
+        let system_program: Program<System> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
                 "system_program".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::program::Program::try_from)
+            .map(Program::try_from)
             .ok_or(FuzzingError::AccountNotFound("system_program".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("system_program".to_string()))?;
         let event_authority = accounts_iter
@@ -445,39 +443,36 @@ impl<'info> InitBondSnapshot<'info> {
 }
 impl<'info> ConfigureBondSnapshot<'info> {
     pub fn deserialize_option(
-        _program_id: &anchor_lang::prelude::Pubkey,
+        _program_id: &Pubkey,
         accounts: &'info mut [Option<AccountInfo<'info>>],
     ) -> core::result::Result<Self, FuzzingError> {
         let mut accounts_iter = accounts.iter();
-        let config: anchor_lang::accounts::account::Account<
-            validator_bonds::state::config::Config,
-        > = accounts_iter
+        let config: Account<validator_bonds::state::config::Config> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("config".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("config".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("config".to_string()))?;
-        let bond: anchor_lang::accounts::account::Account<validator_bonds::state::bond::Bond> =
-            accounts_iter
-                .next()
-                .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
-                .as_ref()
-                .map(anchor_lang::accounts::account::Account::try_from)
-                .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
-                .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
+        let bond: Account<validator_bonds::state::bond::Bond> = accounts_iter
+            .next()
+            .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
+            .as_ref()
+            .map(Account::try_from)
+            .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
+            .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
         let authority: Signer<'_> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("authority".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::signer::Signer::try_from)
+            .map(Signer::try_from)
             .ok_or(FuzzingError::AccountNotFound("authority".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("authority".to_string()))?;
         let vote_account = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("vote_account".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("vote_account".to_string()))?;
         let event_authority = accounts_iter
             .next()
@@ -503,45 +498,42 @@ impl<'info> ConfigureBondSnapshot<'info> {
 }
 impl<'info> ConfigureBondWithMintSnapshot<'info> {
     pub fn deserialize_option(
-        _program_id: &anchor_lang::prelude::Pubkey,
+        _program_id: &Pubkey,
         accounts: &'info mut [Option<AccountInfo<'info>>],
     ) -> core::result::Result<Self, FuzzingError> {
         let mut accounts_iter = accounts.iter();
-        let config: anchor_lang::accounts::account::Account<
-            validator_bonds::state::config::Config,
-        > = accounts_iter
+        let config: Account<validator_bonds::state::config::Config> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("config".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("config".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("config".to_string()))?;
-        let bond: anchor_lang::accounts::account::Account<validator_bonds::state::bond::Bond> =
-            accounts_iter
-                .next()
-                .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
-                .as_ref()
-                .map(anchor_lang::accounts::account::Account::try_from)
-                .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
-                .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
-        let mint: anchor_lang::accounts::account::Account<Mint> = accounts_iter
+        let bond: Account<validator_bonds::state::bond::Bond> = accounts_iter
+            .next()
+            .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
+            .as_ref()
+            .map(Account::try_from)
+            .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
+            .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
+        let mint: Account<Mint> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("mint".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("mint".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("mint".to_string()))?;
         let vote_account = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("vote_account".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("vote_account".to_string()))?;
-        let token_account: anchor_lang::accounts::account::Account<TokenAccount> = accounts_iter
+        let token_account: Account<TokenAccount> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("token_account".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("token_account".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("token_account".to_string()))?;
         let token_authority: Signer<'_> = accounts_iter
@@ -550,14 +542,14 @@ impl<'info> ConfigureBondWithMintSnapshot<'info> {
                 "token_authority".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::signer::Signer::try_from)
+            .map(Signer::try_from)
             .ok_or(FuzzingError::AccountNotFound("token_authority".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("token_authority".to_string()))?;
-        let token_program: anchor_lang::accounts::program::Program<Token> = accounts_iter
+        let token_program: Program<Token> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("token_program".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::program::Program::try_from)
+            .map(Program::try_from)
             .ok_or(FuzzingError::AccountNotFound("token_program".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("token_program".to_string()))?;
         let event_authority = accounts_iter
@@ -587,34 +579,31 @@ impl<'info> ConfigureBondWithMintSnapshot<'info> {
 }
 impl<'info> MintBondSnapshot<'info> {
     pub fn deserialize_option(
-        _program_id: &anchor_lang::prelude::Pubkey,
+        _program_id: &Pubkey,
         accounts: &'info mut [Option<AccountInfo<'info>>],
     ) -> core::result::Result<Self, FuzzingError> {
         let mut accounts_iter = accounts.iter();
-        let config: anchor_lang::accounts::account::Account<
-            validator_bonds::state::config::Config,
-        > = accounts_iter
+        let config: Account<validator_bonds::state::config::Config> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("config".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("config".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("config".to_string()))?;
-        let bond: anchor_lang::accounts::account::Account<validator_bonds::state::bond::Bond> =
-            accounts_iter
-                .next()
-                .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
-                .as_ref()
-                .map(anchor_lang::accounts::account::Account::try_from)
-                .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
-                .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
-        let mint: Option<anchor_lang::accounts::account::Account<Mint>> = accounts_iter
+        let bond: Account<validator_bonds::state::bond::Bond> = accounts_iter
+            .next()
+            .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
+            .as_ref()
+            .map(Account::try_from)
+            .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
+            .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
+        let mint: Option<Account<Mint>> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("mint".to_string()))?
             .as_ref()
             .map(|acc| {
                 if acc.key() != *_program_id {
-                    anchor_lang::accounts::account::Account::try_from(acc)
+                    Account::try_from(acc)
                         .map_err(|_| FuzzingError::CannotDeserializeAccount("mint".to_string()))
                 } else {
                     Err(FuzzingError::OptionalAccountNotProvided("mint".to_string()))
@@ -628,13 +617,11 @@ impl<'info> MintBondSnapshot<'info> {
                 "validator_identity".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "validator_identity".to_string(),
             ))?;
-        let validator_identity_token_account: Option<
-            anchor_lang::accounts::account::Account<TokenAccount>,
-        > = accounts_iter
+        let validator_identity_token_account: Option<Account<TokenAccount>> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
                 "validator_identity_token_account".to_string(),
@@ -642,7 +629,7 @@ impl<'info> MintBondSnapshot<'info> {
             .as_ref()
             .map(|acc| {
                 if acc.key() != *_program_id {
-                    anchor_lang::accounts::account::Account::try_from(acc).map_err(|_| {
+                    Account::try_from(acc).map_err(|_| {
                         FuzzingError::CannotDeserializeAccount(
                             "validator_identity_token_account".to_string(),
                         )
@@ -659,58 +646,57 @@ impl<'info> MintBondSnapshot<'info> {
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("vote_account".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("vote_account".to_string()))?;
         let metadata = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("metadata".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("metadata".to_string()))?;
         let rent_payer: Signer<'_> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("rent_payer".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::signer::Signer::try_from)
+            .map(Signer::try_from)
             .ok_or(FuzzingError::AccountNotFound("rent_payer".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("rent_payer".to_string()))?;
-        let system_program: anchor_lang::accounts::program::Program<System> = accounts_iter
+        let system_program: Program<System> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
                 "system_program".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::program::Program::try_from)
+            .map(Program::try_from)
             .ok_or(FuzzingError::AccountNotFound("system_program".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("system_program".to_string()))?;
-        let token_program: anchor_lang::accounts::program::Program<Token> = accounts_iter
+        let token_program: Program<Token> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("token_program".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::program::Program::try_from)
+            .map(Program::try_from)
             .ok_or(FuzzingError::AccountNotFound("token_program".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("token_program".to_string()))?;
-        let associated_token_program: anchor_lang::accounts::program::Program<AssociatedToken> =
-            accounts_iter
-                .next()
-                .ok_or(FuzzingError::NotEnoughAccounts(
-                    "associated_token_program".to_string(),
-                ))?
-                .as_ref()
-                .map(anchor_lang::accounts::program::Program::try_from)
-                .ok_or(FuzzingError::AccountNotFound(
-                    "associated_token_program".to_string(),
-                ))?
-                .map_err(|_| {
-                    FuzzingError::CannotDeserializeAccount("associated_token_program".to_string())
-                })?;
-        let metadata_program: anchor_lang::accounts::program::Program<Metadata> = accounts_iter
+        let associated_token_program: Program<AssociatedToken> = accounts_iter
+            .next()
+            .ok_or(FuzzingError::NotEnoughAccounts(
+                "associated_token_program".to_string(),
+            ))?
+            .as_ref()
+            .map(Program::try_from)
+            .ok_or(FuzzingError::AccountNotFound(
+                "associated_token_program".to_string(),
+            ))?
+            .map_err(|_| {
+                FuzzingError::CannotDeserializeAccount("associated_token_program".to_string())
+            })?;
+        let metadata_program: Program<Metadata> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
                 "metadata_program".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::program::Program::try_from)
+            .map(Program::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "metadata_program".to_string(),
             ))?
@@ -719,7 +705,7 @@ impl<'info> MintBondSnapshot<'info> {
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("rent".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::sysvar::Sysvar::from_account_info)
+            .map(Sysvar::from_account_info)
             .ok_or(FuzzingError::AccountNotFound("rent".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("rent".to_string()))?;
         let event_authority = accounts_iter
@@ -755,42 +741,39 @@ impl<'info> MintBondSnapshot<'info> {
 }
 impl<'info> FundBondSnapshot<'info> {
     pub fn deserialize_option(
-        _program_id: &anchor_lang::prelude::Pubkey,
+        _program_id: &Pubkey,
         accounts: &'info mut [Option<AccountInfo<'info>>],
     ) -> core::result::Result<Self, FuzzingError> {
         let mut accounts_iter = accounts.iter();
-        let config: anchor_lang::accounts::account::Account<
-            validator_bonds::state::config::Config,
-        > = accounts_iter
+        let config: Account<validator_bonds::state::config::Config> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("config".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("config".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("config".to_string()))?;
-        let bond: anchor_lang::accounts::account::Account<validator_bonds::state::bond::Bond> =
-            accounts_iter
-                .next()
-                .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
-                .as_ref()
-                .map(anchor_lang::accounts::account::Account::try_from)
-                .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
-                .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
+        let bond: Account<validator_bonds::state::bond::Bond> = accounts_iter
+            .next()
+            .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
+            .as_ref()
+            .map(Account::try_from)
+            .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
+            .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
         let bonds_withdrawer_authority = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
                 "bonds_withdrawer_authority".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "bonds_withdrawer_authority".to_string(),
             ))?;
-        let stake_account: anchor_lang::accounts::account::Account<StakeAccount> = accounts_iter
+        let stake_account: Account<StakeAccount> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_account".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_account".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("stake_account".to_string()))?;
         let stake_authority: Signer<'_> = accounts_iter
@@ -799,28 +782,28 @@ impl<'info> FundBondSnapshot<'info> {
                 "stake_authority".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::signer::Signer::try_from)
+            .map(Signer::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_authority".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("stake_authority".to_string()))?;
         let clock: Sysvar<Clock> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("clock".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::sysvar::Sysvar::from_account_info)
+            .map(Sysvar::from_account_info)
             .ok_or(FuzzingError::AccountNotFound("clock".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("clock".to_string()))?;
         let stake_history: Sysvar<StakeHistory> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_history".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::sysvar::Sysvar::from_account_info)
+            .map(Sysvar::from_account_info)
             .ok_or(FuzzingError::AccountNotFound("stake_history".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("stake_history".to_string()))?;
-        let stake_program: anchor_lang::accounts::program::Program<Stake> = accounts_iter
+        let stake_program: Program<Stake> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_program".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::program::Program::try_from)
+            .map(Program::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_program".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("stake_program".to_string()))?;
         let event_authority = accounts_iter
@@ -851,44 +834,39 @@ impl<'info> FundBondSnapshot<'info> {
 }
 impl<'info> InitWithdrawRequestSnapshot<'info> {
     pub fn deserialize_option(
-        _program_id: &anchor_lang::prelude::Pubkey,
+        _program_id: &Pubkey,
         accounts: &'info mut [Option<AccountInfo<'info>>],
     ) -> core::result::Result<Self, FuzzingError> {
         let mut accounts_iter = accounts.iter();
-        let config: anchor_lang::accounts::account::Account<
-            validator_bonds::state::config::Config,
-        > = accounts_iter
+        let config: Account<validator_bonds::state::config::Config> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("config".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("config".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("config".to_string()))?;
-        let bond: anchor_lang::accounts::account::Account<validator_bonds::state::bond::Bond> =
-            accounts_iter
-                .next()
-                .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
-                .as_ref()
-                .map(anchor_lang::accounts::account::Account::try_from)
-                .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
-                .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
+        let bond: Account<validator_bonds::state::bond::Bond> = accounts_iter
+            .next()
+            .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
+            .as_ref()
+            .map(Account::try_from)
+            .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
+            .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
         let vote_account = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("vote_account".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("vote_account".to_string()))?;
         let authority: Signer<'_> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("authority".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::signer::Signer::try_from)
+            .map(Signer::try_from)
             .ok_or(FuzzingError::AccountNotFound("authority".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("authority".to_string()))?;
         let withdraw_request: Option<
-            anchor_lang::accounts::account::Account<
-                validator_bonds::state::withdraw_request::WithdrawRequest,
-            >,
+            Account<validator_bonds::state::withdraw_request::WithdrawRequest>,
         > = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
@@ -897,7 +875,7 @@ impl<'info> InitWithdrawRequestSnapshot<'info> {
             .as_ref()
             .map(|acc| {
                 if acc.key() != *_program_id {
-                    anchor_lang::accounts::account::Account::try_from(acc).map_err(|_| {
+                    Account::try_from(acc).map_err(|_| {
                         FuzzingError::CannotDeserializeAccount("withdraw_request".to_string())
                     })
                 } else {
@@ -912,16 +890,16 @@ impl<'info> InitWithdrawRequestSnapshot<'info> {
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("rent_payer".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::signer::Signer::try_from)
+            .map(Signer::try_from)
             .ok_or(FuzzingError::AccountNotFound("rent_payer".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("rent_payer".to_string()))?;
-        let system_program: anchor_lang::accounts::program::Program<System> = accounts_iter
+        let system_program: Program<System> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
                 "system_program".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::program::Program::try_from)
+            .map(Program::try_from)
             .ok_or(FuzzingError::AccountNotFound("system_program".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("system_program".to_string()))?;
         let event_authority = accounts_iter
@@ -951,44 +929,39 @@ impl<'info> InitWithdrawRequestSnapshot<'info> {
 }
 impl<'info> CancelWithdrawRequestSnapshot<'info> {
     pub fn deserialize_option(
-        _program_id: &anchor_lang::prelude::Pubkey,
+        _program_id: &Pubkey,
         accounts: &'info mut [Option<AccountInfo<'info>>],
     ) -> core::result::Result<Self, FuzzingError> {
         let mut accounts_iter = accounts.iter();
-        let config: anchor_lang::accounts::account::Account<
-            validator_bonds::state::config::Config,
-        > = accounts_iter
+        let config: Account<validator_bonds::state::config::Config> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("config".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("config".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("config".to_string()))?;
-        let bond: anchor_lang::accounts::account::Account<validator_bonds::state::bond::Bond> =
-            accounts_iter
-                .next()
-                .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
-                .as_ref()
-                .map(anchor_lang::accounts::account::Account::try_from)
-                .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
-                .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
+        let bond: Account<validator_bonds::state::bond::Bond> = accounts_iter
+            .next()
+            .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
+            .as_ref()
+            .map(Account::try_from)
+            .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
+            .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
         let vote_account = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("vote_account".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("vote_account".to_string()))?;
         let authority: Signer<'_> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("authority".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::signer::Signer::try_from)
+            .map(Signer::try_from)
             .ok_or(FuzzingError::AccountNotFound("authority".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("authority".to_string()))?;
         let withdraw_request: Option<
-            anchor_lang::accounts::account::Account<
-                validator_bonds::state::withdraw_request::WithdrawRequest,
-            >,
+            Account<validator_bonds::state::withdraw_request::WithdrawRequest>,
         > = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
@@ -997,7 +970,7 @@ impl<'info> CancelWithdrawRequestSnapshot<'info> {
             .as_ref()
             .map(|acc| {
                 if acc.key() != *_program_id {
-                    anchor_lang::accounts::account::Account::try_from(acc).map_err(|_| {
+                    Account::try_from(acc).map_err(|_| {
                         FuzzingError::CannotDeserializeAccount("withdraw_request".to_string())
                     })
                 } else {
@@ -1014,7 +987,7 @@ impl<'info> CancelWithdrawRequestSnapshot<'info> {
                 "rent_collector".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("rent_collector".to_string()))?;
         let event_authority = accounts_iter
             .next()
@@ -1042,139 +1015,134 @@ impl<'info> CancelWithdrawRequestSnapshot<'info> {
 }
 impl<'info> ClaimWithdrawRequestSnapshot<'info> {
     pub fn deserialize_option(
-        _program_id: &anchor_lang::prelude::Pubkey,
+        _program_id: &Pubkey,
         accounts: &'info mut [Option<AccountInfo<'info>>],
     ) -> core::result::Result<Self, FuzzingError> {
         let mut accounts_iter = accounts.iter();
-        let config: anchor_lang::accounts::account::Account<
-            validator_bonds::state::config::Config,
-        > = accounts_iter
+        let config: Account<validator_bonds::state::config::Config> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("config".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("config".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("config".to_string()))?;
-        let bond: anchor_lang::accounts::account::Account<validator_bonds::state::bond::Bond> =
-            accounts_iter
-                .next()
-                .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
-                .as_ref()
-                .map(anchor_lang::accounts::account::Account::try_from)
-                .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
-                .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
+        let bond: Account<validator_bonds::state::bond::Bond> = accounts_iter
+            .next()
+            .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
+            .as_ref()
+            .map(Account::try_from)
+            .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
+            .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
         let vote_account = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("vote_account".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("vote_account".to_string()))?;
         let authority: Signer<'_> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("authority".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::signer::Signer::try_from)
+            .map(Signer::try_from)
             .ok_or(FuzzingError::AccountNotFound("authority".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("authority".to_string()))?;
-        let withdraw_request: anchor_lang::accounts::account::Account<
-            validator_bonds::state::withdraw_request::WithdrawRequest,
-        > = accounts_iter
-            .next()
-            .ok_or(FuzzingError::NotEnoughAccounts(
-                "withdraw_request".to_string(),
-            ))?
-            .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
-            .ok_or(FuzzingError::AccountNotFound(
-                "withdraw_request".to_string(),
-            ))?
-            .map_err(|_| FuzzingError::CannotDeserializeAccount("withdraw_request".to_string()))?;
+        let withdraw_request: Account<validator_bonds::state::withdraw_request::WithdrawRequest> =
+            accounts_iter
+                .next()
+                .ok_or(FuzzingError::NotEnoughAccounts(
+                    "withdraw_request".to_string(),
+                ))?
+                .as_ref()
+                .map(Account::try_from)
+                .ok_or(FuzzingError::AccountNotFound(
+                    "withdraw_request".to_string(),
+                ))?
+                .map_err(|_| {
+                    FuzzingError::CannotDeserializeAccount("withdraw_request".to_string())
+                })?;
         let bonds_withdrawer_authority = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
                 "bonds_withdrawer_authority".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "bonds_withdrawer_authority".to_string(),
             ))?;
-        let stake_account: anchor_lang::accounts::account::Account<StakeAccount> = accounts_iter
+        let stake_account: Account<StakeAccount> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_account".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_account".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("stake_account".to_string()))?;
         let withdrawer = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("withdrawer".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("withdrawer".to_string()))?;
-        let split_stake_account: Option<anchor_lang::accounts::account::Account<StakeAccount>> =
-            accounts_iter
-                .next()
-                .ok_or(FuzzingError::NotEnoughAccounts(
-                    "split_stake_account".to_string(),
-                ))?
-                .as_ref()
-                .map(|acc| {
-                    if acc.key() != *_program_id {
-                        anchor_lang::accounts::account::Account::try_from(acc).map_err(|_| {
-                            FuzzingError::CannotDeserializeAccount(
-                                "split_stake_account".to_string(),
-                            )
-                        })
-                    } else {
-                        Err(FuzzingError::OptionalAccountNotProvided(
-                            "split_stake_account".to_string(),
-                        ))
-                    }
-                })
-                .transpose()
-                .unwrap_or(None);
+        let split_stake_account: Option<Account<StakeAccount>> = accounts_iter
+            .next()
+            .ok_or(FuzzingError::NotEnoughAccounts(
+                "split_stake_account".to_string(),
+            ))?
+            .as_ref()
+            .map(|acc| {
+                if acc.key() != *_program_id {
+                    Account::try_from(acc).map_err(|_| {
+                        FuzzingError::CannotDeserializeAccount("split_stake_account".to_string())
+                    })
+                } else {
+                    Err(FuzzingError::OptionalAccountNotProvided(
+                        "split_stake_account".to_string(),
+                    ))
+                }
+            })
+            .transpose()
+            .unwrap_or(None);
         let split_stake_rent_payer: Signer<'_> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
                 "split_stake_rent_payer".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::signer::Signer::try_from)
+            .map(Signer::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "split_stake_rent_payer".to_string(),
             ))?
             .map_err(|_| {
                 FuzzingError::CannotDeserializeAccount("split_stake_rent_payer".to_string())
             })?;
-        let stake_program: anchor_lang::accounts::program::Program<Stake> = accounts_iter
+        let stake_program: Program<Stake> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_program".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::program::Program::try_from)
+            .map(Program::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_program".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("stake_program".to_string()))?;
-        let system_program: anchor_lang::accounts::program::Program<System> = accounts_iter
+        let system_program: Program<System> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
                 "system_program".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::program::Program::try_from)
+            .map(Program::try_from)
             .ok_or(FuzzingError::AccountNotFound("system_program".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("system_program".to_string()))?;
         let stake_history: Sysvar<StakeHistory> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_history".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::sysvar::Sysvar::from_account_info)
+            .map(Sysvar::from_account_info)
             .ok_or(FuzzingError::AccountNotFound("stake_history".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("stake_history".to_string()))?;
         let clock: Sysvar<Clock> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("clock".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::sysvar::Sysvar::from_account_info)
+            .map(Sysvar::from_account_info)
             .ok_or(FuzzingError::AccountNotFound("clock".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("clock".to_string()))?;
         let event_authority = accounts_iter
@@ -1211,50 +1179,44 @@ impl<'info> ClaimWithdrawRequestSnapshot<'info> {
 }
 impl<'info> InitSettlementSnapshot<'info> {
     pub fn deserialize_option(
-        _program_id: &anchor_lang::prelude::Pubkey,
+        _program_id: &Pubkey,
         accounts: &'info mut [Option<AccountInfo<'info>>],
     ) -> core::result::Result<Self, FuzzingError> {
         let mut accounts_iter = accounts.iter();
-        let config: anchor_lang::accounts::account::Account<
-            validator_bonds::state::config::Config,
-        > = accounts_iter
+        let config: Account<validator_bonds::state::config::Config> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("config".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("config".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("config".to_string()))?;
-        let bond: anchor_lang::accounts::account::Account<validator_bonds::state::bond::Bond> =
+        let bond: Account<validator_bonds::state::bond::Bond> = accounts_iter
+            .next()
+            .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
+            .as_ref()
+            .map(Account::try_from)
+            .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
+            .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
+        let settlement: Option<Account<validator_bonds::state::settlement::Settlement>> =
             accounts_iter
                 .next()
-                .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
+                .ok_or(FuzzingError::NotEnoughAccounts("settlement".to_string()))?
                 .as_ref()
-                .map(anchor_lang::accounts::account::Account::try_from)
-                .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
-                .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
-        let settlement: Option<
-            anchor_lang::accounts::account::Account<validator_bonds::state::settlement::Settlement>,
-        > = accounts_iter
-            .next()
-            .ok_or(FuzzingError::NotEnoughAccounts("settlement".to_string()))?
-            .as_ref()
-            .map(|acc| {
-                if acc.key() != *_program_id {
-                    anchor_lang::accounts::account::Account::try_from(acc).map_err(|_| {
-                        FuzzingError::CannotDeserializeAccount("settlement".to_string())
-                    })
-                } else {
-                    Err(FuzzingError::OptionalAccountNotProvided(
-                        "settlement".to_string(),
-                    ))
-                }
-            })
-            .transpose()
-            .unwrap_or(None);
+                .map(|acc| {
+                    if acc.key() != *_program_id {
+                        Account::try_from(acc).map_err(|_| {
+                            FuzzingError::CannotDeserializeAccount("settlement".to_string())
+                        })
+                    } else {
+                        Err(FuzzingError::OptionalAccountNotProvided(
+                            "settlement".to_string(),
+                        ))
+                    }
+                })
+                .transpose()
+                .unwrap_or(None);
         let settlement_claims: Option<
-            anchor_lang::accounts::account::Account<
-                validator_bonds::state::settlement_claims::SettlementClaims,
-            >,
+            Account<validator_bonds::state::settlement_claims::SettlementClaims>,
         > = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
@@ -1263,7 +1225,7 @@ impl<'info> InitSettlementSnapshot<'info> {
             .as_ref()
             .map(|acc| {
                 if acc.key() != *_program_id {
-                    anchor_lang::accounts::account::Account::try_from(acc).map_err(|_| {
+                    Account::try_from(acc).map_err(|_| {
                         FuzzingError::CannotDeserializeAccount("settlement_claims".to_string())
                     })
                 } else {
@@ -1280,7 +1242,7 @@ impl<'info> InitSettlementSnapshot<'info> {
                 "operator_authority".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::signer::Signer::try_from)
+            .map(Signer::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "operator_authority".to_string(),
             ))?
@@ -1291,16 +1253,16 @@ impl<'info> InitSettlementSnapshot<'info> {
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("rent_payer".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::signer::Signer::try_from)
+            .map(Signer::try_from)
             .ok_or(FuzzingError::AccountNotFound("rent_payer".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("rent_payer".to_string()))?;
-        let system_program: anchor_lang::accounts::program::Program<System> = accounts_iter
+        let system_program: Program<System> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
                 "system_program".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::program::Program::try_from)
+            .map(Program::try_from)
             .ok_or(FuzzingError::AccountNotFound("system_program".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("system_program".to_string()))?;
         let event_authority = accounts_iter
@@ -1330,11 +1292,11 @@ impl<'info> InitSettlementSnapshot<'info> {
 }
 impl<'info> UpsizeSettlementClaimsSnapshot<'info> {
     pub fn deserialize_option(
-        _program_id: &anchor_lang::prelude::Pubkey,
+        _program_id: &Pubkey,
         accounts: &'info mut [Option<AccountInfo<'info>>],
     ) -> core::result::Result<Self, FuzzingError> {
         let mut accounts_iter = accounts.iter();
-        let settlement_claims: anchor_lang::accounts::account::Account<
+        let settlement_claims: Account<
             validator_bonds::state::settlement_claims::SettlementClaims,
         > = accounts_iter
             .next()
@@ -1342,7 +1304,7 @@ impl<'info> UpsizeSettlementClaimsSnapshot<'info> {
                 "settlement_claims".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "settlement_claims".to_string(),
             ))?
@@ -1351,16 +1313,16 @@ impl<'info> UpsizeSettlementClaimsSnapshot<'info> {
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("rent_payer".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::signer::Signer::try_from)
+            .map(Signer::try_from)
             .ok_or(FuzzingError::AccountNotFound("rent_payer".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("rent_payer".to_string()))?;
-        let system_program: anchor_lang::accounts::program::Program<System> = accounts_iter
+        let system_program: Program<System> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
                 "system_program".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::program::Program::try_from)
+            .map(Program::try_from)
             .ok_or(FuzzingError::AccountNotFound("system_program".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("system_program".to_string()))?;
         Ok(Self {
@@ -1372,50 +1334,44 @@ impl<'info> UpsizeSettlementClaimsSnapshot<'info> {
 }
 impl<'info> CancelSettlementSnapshot<'info> {
     pub fn deserialize_option(
-        _program_id: &anchor_lang::prelude::Pubkey,
+        _program_id: &Pubkey,
         accounts: &'info mut [Option<AccountInfo<'info>>],
     ) -> core::result::Result<Self, FuzzingError> {
         let mut accounts_iter = accounts.iter();
-        let config: anchor_lang::accounts::account::Account<
-            validator_bonds::state::config::Config,
-        > = accounts_iter
+        let config: Account<validator_bonds::state::config::Config> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("config".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("config".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("config".to_string()))?;
-        let bond: anchor_lang::accounts::account::Account<validator_bonds::state::bond::Bond> =
+        let bond: Account<validator_bonds::state::bond::Bond> = accounts_iter
+            .next()
+            .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
+            .as_ref()
+            .map(Account::try_from)
+            .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
+            .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
+        let settlement: Option<Account<validator_bonds::state::settlement::Settlement>> =
             accounts_iter
                 .next()
-                .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
+                .ok_or(FuzzingError::NotEnoughAccounts("settlement".to_string()))?
                 .as_ref()
-                .map(anchor_lang::accounts::account::Account::try_from)
-                .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
-                .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
-        let settlement: Option<
-            anchor_lang::accounts::account::Account<validator_bonds::state::settlement::Settlement>,
-        > = accounts_iter
-            .next()
-            .ok_or(FuzzingError::NotEnoughAccounts("settlement".to_string()))?
-            .as_ref()
-            .map(|acc| {
-                if acc.key() != *_program_id {
-                    anchor_lang::accounts::account::Account::try_from(acc).map_err(|_| {
-                        FuzzingError::CannotDeserializeAccount("settlement".to_string())
-                    })
-                } else {
-                    Err(FuzzingError::OptionalAccountNotProvided(
-                        "settlement".to_string(),
-                    ))
-                }
-            })
-            .transpose()
-            .unwrap_or(None);
+                .map(|acc| {
+                    if acc.key() != *_program_id {
+                        Account::try_from(acc).map_err(|_| {
+                            FuzzingError::CannotDeserializeAccount("settlement".to_string())
+                        })
+                    } else {
+                        Err(FuzzingError::OptionalAccountNotProvided(
+                            "settlement".to_string(),
+                        ))
+                    }
+                })
+                .transpose()
+                .unwrap_or(None);
         let settlement_claims: Option<
-            anchor_lang::accounts::account::Account<
-                validator_bonds::state::settlement_claims::SettlementClaims,
-            >,
+            Account<validator_bonds::state::settlement_claims::SettlementClaims>,
         > = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
@@ -1424,7 +1380,7 @@ impl<'info> CancelSettlementSnapshot<'info> {
             .as_ref()
             .map(|acc| {
                 if acc.key() != *_program_id {
-                    anchor_lang::accounts::account::Account::try_from(acc).map_err(|_| {
+                    Account::try_from(acc).map_err(|_| {
                         FuzzingError::CannotDeserializeAccount("settlement_claims".to_string())
                     })
                 } else {
@@ -1439,7 +1395,7 @@ impl<'info> CancelSettlementSnapshot<'info> {
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("authority".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::signer::Signer::try_from)
+            .map(Signer::try_from)
             .ok_or(FuzzingError::AccountNotFound("authority".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("authority".to_string()))?;
         let bonds_withdrawer_authority = accounts_iter
@@ -1448,7 +1404,7 @@ impl<'info> CancelSettlementSnapshot<'info> {
                 "bonds_withdrawer_authority".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "bonds_withdrawer_authority".to_string(),
             ))?;
@@ -1458,7 +1414,7 @@ impl<'info> CancelSettlementSnapshot<'info> {
                 "rent_collector".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("rent_collector".to_string()))?;
         let split_rent_collector = accounts_iter
             .next()
@@ -1466,7 +1422,7 @@ impl<'info> CancelSettlementSnapshot<'info> {
                 "split_rent_collector".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "split_rent_collector".to_string(),
             ))?;
@@ -1476,7 +1432,7 @@ impl<'info> CancelSettlementSnapshot<'info> {
                 "split_rent_refund_account".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "split_rent_refund_account".to_string(),
             ))?;
@@ -1484,21 +1440,21 @@ impl<'info> CancelSettlementSnapshot<'info> {
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("clock".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::sysvar::Sysvar::from_account_info)
+            .map(Sysvar::from_account_info)
             .ok_or(FuzzingError::AccountNotFound("clock".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("clock".to_string()))?;
-        let stake_program: anchor_lang::accounts::program::Program<Stake> = accounts_iter
+        let stake_program: Program<Stake> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_program".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::program::Program::try_from)
+            .map(Program::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_program".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("stake_program".to_string()))?;
         let stake_history = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_history".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_history".to_string()))?;
         let event_authority = accounts_iter
             .next()
@@ -1532,40 +1488,35 @@ impl<'info> CancelSettlementSnapshot<'info> {
 }
 impl<'info> FundSettlementSnapshot<'info> {
     pub fn deserialize_option(
-        _program_id: &anchor_lang::prelude::Pubkey,
+        _program_id: &Pubkey,
         accounts: &'info mut [Option<AccountInfo<'info>>],
     ) -> core::result::Result<Self, FuzzingError> {
         let mut accounts_iter = accounts.iter();
-        let config: anchor_lang::accounts::account::Account<
-            validator_bonds::state::config::Config,
-        > = accounts_iter
+        let config: Account<validator_bonds::state::config::Config> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("config".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("config".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("config".to_string()))?;
-        let bond: anchor_lang::accounts::account::Account<validator_bonds::state::bond::Bond> =
-            accounts_iter
-                .next()
-                .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
-                .as_ref()
-                .map(anchor_lang::accounts::account::Account::try_from)
-                .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
-                .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
+        let bond: Account<validator_bonds::state::bond::Bond> = accounts_iter
+            .next()
+            .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
+            .as_ref()
+            .map(Account::try_from)
+            .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
+            .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
         let vote_account = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("vote_account".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("vote_account".to_string()))?;
-        let settlement: anchor_lang::accounts::account::Account<
-            validator_bonds::state::settlement::Settlement,
-        > = accounts_iter
+        let settlement: Account<validator_bonds::state::settlement::Settlement> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("settlement".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("settlement".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("settlement".to_string()))?;
         let operator_authority: Signer<'_> = accounts_iter
@@ -1574,18 +1525,18 @@ impl<'info> FundSettlementSnapshot<'info> {
                 "operator_authority".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::signer::Signer::try_from)
+            .map(Signer::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "operator_authority".to_string(),
             ))?
             .map_err(|_| {
                 FuzzingError::CannotDeserializeAccount("operator_authority".to_string())
             })?;
-        let stake_account: anchor_lang::accounts::account::Account<StakeAccount> = accounts_iter
+        let stake_account: Account<StakeAccount> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_account".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_account".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("stake_account".to_string()))?;
         let settlement_staker_authority = accounts_iter
@@ -1594,7 +1545,7 @@ impl<'info> FundSettlementSnapshot<'info> {
                 "settlement_staker_authority".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "settlement_staker_authority".to_string(),
             ))?;
@@ -1604,86 +1555,83 @@ impl<'info> FundSettlementSnapshot<'info> {
                 "bonds_withdrawer_authority".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "bonds_withdrawer_authority".to_string(),
             ))?;
-        let split_stake_account: Option<anchor_lang::accounts::account::Account<StakeAccount>> =
-            accounts_iter
-                .next()
-                .ok_or(FuzzingError::NotEnoughAccounts(
-                    "split_stake_account".to_string(),
-                ))?
-                .as_ref()
-                .map(|acc| {
-                    if acc.key() != *_program_id {
-                        anchor_lang::accounts::account::Account::try_from(acc).map_err(|_| {
-                            FuzzingError::CannotDeserializeAccount(
-                                "split_stake_account".to_string(),
-                            )
-                        })
-                    } else {
-                        Err(FuzzingError::OptionalAccountNotProvided(
-                            "split_stake_account".to_string(),
-                        ))
-                    }
-                })
-                .transpose()
-                .unwrap_or(None);
+        let split_stake_account: Option<Account<StakeAccount>> = accounts_iter
+            .next()
+            .ok_or(FuzzingError::NotEnoughAccounts(
+                "split_stake_account".to_string(),
+            ))?
+            .as_ref()
+            .map(|acc| {
+                if acc.key() != *_program_id {
+                    Account::try_from(acc).map_err(|_| {
+                        FuzzingError::CannotDeserializeAccount("split_stake_account".to_string())
+                    })
+                } else {
+                    Err(FuzzingError::OptionalAccountNotProvided(
+                        "split_stake_account".to_string(),
+                    ))
+                }
+            })
+            .transpose()
+            .unwrap_or(None);
         let split_stake_rent_payer: Signer<'_> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
                 "split_stake_rent_payer".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::signer::Signer::try_from)
+            .map(Signer::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "split_stake_rent_payer".to_string(),
             ))?
             .map_err(|_| {
                 FuzzingError::CannotDeserializeAccount("split_stake_rent_payer".to_string())
             })?;
-        let system_program: anchor_lang::accounts::program::Program<System> = accounts_iter
+        let system_program: Program<System> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
                 "system_program".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::program::Program::try_from)
+            .map(Program::try_from)
             .ok_or(FuzzingError::AccountNotFound("system_program".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("system_program".to_string()))?;
         let stake_history = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_history".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_history".to_string()))?;
         let clock: Sysvar<Clock> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("clock".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::sysvar::Sysvar::from_account_info)
+            .map(Sysvar::from_account_info)
             .ok_or(FuzzingError::AccountNotFound("clock".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("clock".to_string()))?;
         let rent: Sysvar<Rent> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("rent".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::sysvar::Sysvar::from_account_info)
+            .map(Sysvar::from_account_info)
             .ok_or(FuzzingError::AccountNotFound("rent".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("rent".to_string()))?;
-        let stake_program: anchor_lang::accounts::program::Program<Stake> = accounts_iter
+        let stake_program: Program<Stake> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_program".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::program::Program::try_from)
+            .map(Program::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_program".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("stake_program".to_string()))?;
         let stake_config = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_config".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_config".to_string()))?;
         let event_authority = accounts_iter
             .next()
@@ -1721,47 +1669,42 @@ impl<'info> FundSettlementSnapshot<'info> {
 }
 impl<'info> MergeStakeSnapshot<'info> {
     pub fn deserialize_option(
-        _program_id: &anchor_lang::prelude::Pubkey,
+        _program_id: &Pubkey,
         accounts: &'info mut [Option<AccountInfo<'info>>],
     ) -> core::result::Result<Self, FuzzingError> {
         let mut accounts_iter = accounts.iter();
-        let config: anchor_lang::accounts::account::Account<
-            validator_bonds::state::config::Config,
-        > = accounts_iter
+        let config: Account<validator_bonds::state::config::Config> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("config".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("config".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("config".to_string()))?;
-        let source_stake: anchor_lang::accounts::account::Account<StakeAccount> = accounts_iter
+        let source_stake: Account<StakeAccount> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("source_stake".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("source_stake".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("source_stake".to_string()))?;
-        let destination_stake: anchor_lang::accounts::account::Account<StakeAccount> =
-            accounts_iter
-                .next()
-                .ok_or(FuzzingError::NotEnoughAccounts(
-                    "destination_stake".to_string(),
-                ))?
-                .as_ref()
-                .map(anchor_lang::accounts::account::Account::try_from)
-                .ok_or(FuzzingError::AccountNotFound(
-                    "destination_stake".to_string(),
-                ))?
-                .map_err(|_| {
-                    FuzzingError::CannotDeserializeAccount("destination_stake".to_string())
-                })?;
+        let destination_stake: Account<StakeAccount> = accounts_iter
+            .next()
+            .ok_or(FuzzingError::NotEnoughAccounts(
+                "destination_stake".to_string(),
+            ))?
+            .as_ref()
+            .map(Account::try_from)
+            .ok_or(FuzzingError::AccountNotFound(
+                "destination_stake".to_string(),
+            ))?
+            .map_err(|_| FuzzingError::CannotDeserializeAccount("destination_stake".to_string()))?;
         let staker_authority = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
                 "staker_authority".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "staker_authority".to_string(),
             ))?;
@@ -1769,20 +1712,20 @@ impl<'info> MergeStakeSnapshot<'info> {
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_history".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_history".to_string()))?;
         let clock: Sysvar<Clock> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("clock".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::sysvar::Sysvar::from_account_info)
+            .map(Sysvar::from_account_info)
             .ok_or(FuzzingError::AccountNotFound("clock".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("clock".to_string()))?;
-        let stake_program: anchor_lang::accounts::program::Program<Stake> = accounts_iter
+        let stake_program: Program<Stake> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_program".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::program::Program::try_from)
+            .map(Program::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_program".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("stake_program".to_string()))?;
         let event_authority = accounts_iter
@@ -1812,38 +1755,35 @@ impl<'info> MergeStakeSnapshot<'info> {
 }
 impl<'info> ResetStakeSnapshot<'info> {
     pub fn deserialize_option(
-        _program_id: &anchor_lang::prelude::Pubkey,
+        _program_id: &Pubkey,
         accounts: &'info mut [Option<AccountInfo<'info>>],
     ) -> core::result::Result<Self, FuzzingError> {
         let mut accounts_iter = accounts.iter();
-        let config: anchor_lang::accounts::account::Account<
-            validator_bonds::state::config::Config,
-        > = accounts_iter
+        let config: Account<validator_bonds::state::config::Config> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("config".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("config".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("config".to_string()))?;
-        let bond: anchor_lang::accounts::account::Account<validator_bonds::state::bond::Bond> =
-            accounts_iter
-                .next()
-                .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
-                .as_ref()
-                .map(anchor_lang::accounts::account::Account::try_from)
-                .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
-                .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
+        let bond: Account<validator_bonds::state::bond::Bond> = accounts_iter
+            .next()
+            .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
+            .as_ref()
+            .map(Account::try_from)
+            .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
+            .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
         let settlement = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("settlement".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("settlement".to_string()))?;
-        let stake_account: anchor_lang::accounts::account::Account<StakeAccount> = accounts_iter
+        let stake_account: Account<StakeAccount> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_account".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_account".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("stake_account".to_string()))?;
         let bonds_withdrawer_authority = accounts_iter
@@ -1852,7 +1792,7 @@ impl<'info> ResetStakeSnapshot<'info> {
                 "bonds_withdrawer_authority".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "bonds_withdrawer_authority".to_string(),
             ))?;
@@ -1860,32 +1800,32 @@ impl<'info> ResetStakeSnapshot<'info> {
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("vote_account".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("vote_account".to_string()))?;
         let stake_history = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_history".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_history".to_string()))?;
         let stake_config = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_config".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_config".to_string()))?;
         let clock: Sysvar<Clock> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("clock".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::sysvar::Sysvar::from_account_info)
+            .map(Sysvar::from_account_info)
             .ok_or(FuzzingError::AccountNotFound("clock".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("clock".to_string()))?;
-        let stake_program: anchor_lang::accounts::program::Program<Stake> = accounts_iter
+        let stake_program: Program<Stake> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_program".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::program::Program::try_from)
+            .map(Program::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_program".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("stake_program".to_string()))?;
         let event_authority = accounts_iter
@@ -1918,17 +1858,15 @@ impl<'info> ResetStakeSnapshot<'info> {
 }
 impl<'info> WithdrawStakeSnapshot<'info> {
     pub fn deserialize_option(
-        _program_id: &anchor_lang::prelude::Pubkey,
+        _program_id: &Pubkey,
         accounts: &'info mut [Option<AccountInfo<'info>>],
     ) -> core::result::Result<Self, FuzzingError> {
         let mut accounts_iter = accounts.iter();
-        let config: anchor_lang::accounts::account::Account<
-            validator_bonds::state::config::Config,
-        > = accounts_iter
+        let config: Account<validator_bonds::state::config::Config> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("config".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("config".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("config".to_string()))?;
         let operator_authority: Signer<'_> = accounts_iter
@@ -1937,7 +1875,7 @@ impl<'info> WithdrawStakeSnapshot<'info> {
                 "operator_authority".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::signer::Signer::try_from)
+            .map(Signer::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "operator_authority".to_string(),
             ))?
@@ -1948,13 +1886,13 @@ impl<'info> WithdrawStakeSnapshot<'info> {
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("settlement".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("settlement".to_string()))?;
-        let stake_account: anchor_lang::accounts::account::Account<StakeAccount> = accounts_iter
+        let stake_account: Account<StakeAccount> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_account".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_account".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("stake_account".to_string()))?;
         let bonds_withdrawer_authority = accounts_iter
@@ -1963,7 +1901,7 @@ impl<'info> WithdrawStakeSnapshot<'info> {
                 "bonds_withdrawer_authority".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "bonds_withdrawer_authority".to_string(),
             ))?;
@@ -1971,26 +1909,26 @@ impl<'info> WithdrawStakeSnapshot<'info> {
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("withdraw_to".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("withdraw_to".to_string()))?;
         let stake_history = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_history".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_history".to_string()))?;
         let clock: Sysvar<Clock> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("clock".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::sysvar::Sysvar::from_account_info)
+            .map(Sysvar::from_account_info)
             .ok_or(FuzzingError::AccountNotFound("clock".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("clock".to_string()))?;
-        let stake_program: anchor_lang::accounts::program::Program<Stake> = accounts_iter
+        let stake_program: Program<Stake> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_program".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::program::Program::try_from)
+            .map(Program::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_program".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("stake_program".to_string()))?;
         let event_authority = accounts_iter
@@ -2022,17 +1960,15 @@ impl<'info> WithdrawStakeSnapshot<'info> {
 }
 impl<'info> EmergencyPauseSnapshot<'info> {
     pub fn deserialize_option(
-        _program_id: &anchor_lang::prelude::Pubkey,
+        _program_id: &Pubkey,
         accounts: &'info mut [Option<AccountInfo<'info>>],
     ) -> core::result::Result<Self, FuzzingError> {
         let mut accounts_iter = accounts.iter();
-        let config: anchor_lang::accounts::account::Account<
-            validator_bonds::state::config::Config,
-        > = accounts_iter
+        let config: Account<validator_bonds::state::config::Config> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("config".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("config".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("config".to_string()))?;
         let pause_authority: Signer<'_> = accounts_iter
@@ -2041,7 +1977,7 @@ impl<'info> EmergencyPauseSnapshot<'info> {
                 "pause_authority".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::signer::Signer::try_from)
+            .map(Signer::try_from)
             .ok_or(FuzzingError::AccountNotFound("pause_authority".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("pause_authority".to_string()))?;
         let event_authority = accounts_iter
@@ -2066,50 +2002,44 @@ impl<'info> EmergencyPauseSnapshot<'info> {
 }
 impl<'info> CloseSettlementV2Snapshot<'info> {
     pub fn deserialize_option(
-        _program_id: &anchor_lang::prelude::Pubkey,
+        _program_id: &Pubkey,
         accounts: &'info mut [Option<AccountInfo<'info>>],
     ) -> core::result::Result<Self, FuzzingError> {
         let mut accounts_iter = accounts.iter();
-        let config: anchor_lang::accounts::account::Account<
-            validator_bonds::state::config::Config,
-        > = accounts_iter
+        let config: Account<validator_bonds::state::config::Config> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("config".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("config".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("config".to_string()))?;
-        let bond: anchor_lang::accounts::account::Account<validator_bonds::state::bond::Bond> =
+        let bond: Account<validator_bonds::state::bond::Bond> = accounts_iter
+            .next()
+            .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
+            .as_ref()
+            .map(Account::try_from)
+            .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
+            .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
+        let settlement: Option<Account<validator_bonds::state::settlement::Settlement>> =
             accounts_iter
                 .next()
-                .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
+                .ok_or(FuzzingError::NotEnoughAccounts("settlement".to_string()))?
                 .as_ref()
-                .map(anchor_lang::accounts::account::Account::try_from)
-                .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
-                .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
-        let settlement: Option<
-            anchor_lang::accounts::account::Account<validator_bonds::state::settlement::Settlement>,
-        > = accounts_iter
-            .next()
-            .ok_or(FuzzingError::NotEnoughAccounts("settlement".to_string()))?
-            .as_ref()
-            .map(|acc| {
-                if acc.key() != *_program_id {
-                    anchor_lang::accounts::account::Account::try_from(acc).map_err(|_| {
-                        FuzzingError::CannotDeserializeAccount("settlement".to_string())
-                    })
-                } else {
-                    Err(FuzzingError::OptionalAccountNotProvided(
-                        "settlement".to_string(),
-                    ))
-                }
-            })
-            .transpose()
-            .unwrap_or(None);
+                .map(|acc| {
+                    if acc.key() != *_program_id {
+                        Account::try_from(acc).map_err(|_| {
+                            FuzzingError::CannotDeserializeAccount("settlement".to_string())
+                        })
+                    } else {
+                        Err(FuzzingError::OptionalAccountNotProvided(
+                            "settlement".to_string(),
+                        ))
+                    }
+                })
+                .transpose()
+                .unwrap_or(None);
         let settlement_claims: Option<
-            anchor_lang::accounts::account::Account<
-                validator_bonds::state::settlement_claims::SettlementClaims,
-            >,
+            Account<validator_bonds::state::settlement_claims::SettlementClaims>,
         > = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
@@ -2118,7 +2048,7 @@ impl<'info> CloseSettlementV2Snapshot<'info> {
             .as_ref()
             .map(|acc| {
                 if acc.key() != *_program_id {
-                    anchor_lang::accounts::account::Account::try_from(acc).map_err(|_| {
+                    Account::try_from(acc).map_err(|_| {
                         FuzzingError::CannotDeserializeAccount("settlement_claims".to_string())
                     })
                 } else {
@@ -2135,7 +2065,7 @@ impl<'info> CloseSettlementV2Snapshot<'info> {
                 "bonds_withdrawer_authority".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "bonds_withdrawer_authority".to_string(),
             ))?;
@@ -2145,7 +2075,7 @@ impl<'info> CloseSettlementV2Snapshot<'info> {
                 "rent_collector".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("rent_collector".to_string()))?;
         let split_rent_collector = accounts_iter
             .next()
@@ -2153,7 +2083,7 @@ impl<'info> CloseSettlementV2Snapshot<'info> {
                 "split_rent_collector".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "split_rent_collector".to_string(),
             ))?;
@@ -2163,7 +2093,7 @@ impl<'info> CloseSettlementV2Snapshot<'info> {
                 "split_rent_refund_account".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "split_rent_refund_account".to_string(),
             ))?;
@@ -2171,21 +2101,21 @@ impl<'info> CloseSettlementV2Snapshot<'info> {
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("clock".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::sysvar::Sysvar::from_account_info)
+            .map(Sysvar::from_account_info)
             .ok_or(FuzzingError::AccountNotFound("clock".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("clock".to_string()))?;
-        let stake_program: anchor_lang::accounts::program::Program<Stake> = accounts_iter
+        let stake_program: Program<Stake> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_program".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::program::Program::try_from)
+            .map(Program::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_program".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("stake_program".to_string()))?;
         let stake_history = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_history".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_history".to_string()))?;
         let event_authority = accounts_iter
             .next()
@@ -2218,37 +2148,32 @@ impl<'info> CloseSettlementV2Snapshot<'info> {
 }
 impl<'info> ClaimSettlementV2Snapshot<'info> {
     pub fn deserialize_option(
-        _program_id: &anchor_lang::prelude::Pubkey,
+        _program_id: &Pubkey,
         accounts: &'info mut [Option<AccountInfo<'info>>],
     ) -> core::result::Result<Self, FuzzingError> {
         let mut accounts_iter = accounts.iter();
-        let config: anchor_lang::accounts::account::Account<
-            validator_bonds::state::config::Config,
-        > = accounts_iter
+        let config: Account<validator_bonds::state::config::Config> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("config".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("config".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("config".to_string()))?;
-        let bond: anchor_lang::accounts::account::Account<validator_bonds::state::bond::Bond> =
-            accounts_iter
-                .next()
-                .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
-                .as_ref()
-                .map(anchor_lang::accounts::account::Account::try_from)
-                .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
-                .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
-        let settlement: anchor_lang::accounts::account::Account<
-            validator_bonds::state::settlement::Settlement,
-        > = accounts_iter
+        let bond: Account<validator_bonds::state::bond::Bond> = accounts_iter
+            .next()
+            .ok_or(FuzzingError::NotEnoughAccounts("bond".to_string()))?
+            .as_ref()
+            .map(Account::try_from)
+            .ok_or(FuzzingError::AccountNotFound("bond".to_string()))?
+            .map_err(|_| FuzzingError::CannotDeserializeAccount("bond".to_string()))?;
+        let settlement: Account<validator_bonds::state::settlement::Settlement> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("settlement".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound("settlement".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("settlement".to_string()))?;
-        let settlement_claims: anchor_lang::accounts::account::Account<
+        let settlement_claims: Account<
             validator_bonds::state::settlement_claims::SettlementClaims,
         > = accounts_iter
             .next()
@@ -2256,32 +2181,31 @@ impl<'info> ClaimSettlementV2Snapshot<'info> {
                 "settlement_claims".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "settlement_claims".to_string(),
             ))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("settlement_claims".to_string()))?;
-        let stake_account_from: anchor_lang::accounts::account::Account<StakeAccount> =
-            accounts_iter
-                .next()
-                .ok_or(FuzzingError::NotEnoughAccounts(
-                    "stake_account_from".to_string(),
-                ))?
-                .as_ref()
-                .map(anchor_lang::accounts::account::Account::try_from)
-                .ok_or(FuzzingError::AccountNotFound(
-                    "stake_account_from".to_string(),
-                ))?
-                .map_err(|_| {
-                    FuzzingError::CannotDeserializeAccount("stake_account_from".to_string())
-                })?;
-        let stake_account_to: anchor_lang::accounts::account::Account<StakeAccount> = accounts_iter
+        let stake_account_from: Account<StakeAccount> = accounts_iter
+            .next()
+            .ok_or(FuzzingError::NotEnoughAccounts(
+                "stake_account_from".to_string(),
+            ))?
+            .as_ref()
+            .map(Account::try_from)
+            .ok_or(FuzzingError::AccountNotFound(
+                "stake_account_from".to_string(),
+            ))?
+            .map_err(|_| {
+                FuzzingError::CannotDeserializeAccount("stake_account_from".to_string())
+            })?;
+        let stake_account_to: Account<StakeAccount> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts(
                 "stake_account_to".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::account::Account::try_from)
+            .map(Account::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "stake_account_to".to_string(),
             ))?
@@ -2292,7 +2216,7 @@ impl<'info> ClaimSettlementV2Snapshot<'info> {
                 "bonds_withdrawer_authority".to_string(),
             ))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound(
                 "bonds_withdrawer_authority".to_string(),
             ))?;
@@ -2300,20 +2224,20 @@ impl<'info> ClaimSettlementV2Snapshot<'info> {
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_history".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::unchecked_account::UncheckedAccount::try_from)
+            .map(UncheckedAccount::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_history".to_string()))?;
         let clock: Sysvar<Clock> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("clock".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::sysvar::Sysvar::from_account_info)
+            .map(Sysvar::from_account_info)
             .ok_or(FuzzingError::AccountNotFound("clock".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("clock".to_string()))?;
-        let stake_program: anchor_lang::accounts::program::Program<Stake> = accounts_iter
+        let stake_program: Program<Stake> = accounts_iter
             .next()
             .ok_or(FuzzingError::NotEnoughAccounts("stake_program".to_string()))?
             .as_ref()
-            .map(anchor_lang::accounts::program::Program::try_from)
+            .map(Program::try_from)
             .ok_or(FuzzingError::AccountNotFound("stake_program".to_string()))?
             .map_err(|_| FuzzingError::CannotDeserializeAccount("stake_program".to_string()))?;
         let event_authority = accounts_iter

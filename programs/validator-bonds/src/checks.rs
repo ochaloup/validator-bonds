@@ -754,11 +754,9 @@ mod tests {
                     effective,
                     activating,
                     deactivating,
-                } = stake.delegation.stake_activating_and_deactivating(
-                    epoch,
-                    stake_history,
-                    None,
-                );
+                } = stake
+                    .delegation
+                    .stake_activating_and_deactivating(epoch, stake_history, None);
 
                 println!(
                     "get_delegation_state: [effective:{}/activating:{}/deactivating:{}]",

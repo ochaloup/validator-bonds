@@ -3,7 +3,7 @@ use crate::events::{config::ConfigureConfigEvent, PubkeyValueChange, U64ValueCha
 use crate::state::config::Config;
 use anchor_lang::prelude::*;
 
-#[derive(AnchorDeserialize, AnchorSerialize)]
+#[derive(Debug, AnchorDeserialize, AnchorSerialize)]
 pub struct ConfigureConfigArgs {
     pub admin: Option<Pubkey>,
     pub operator: Option<Pubkey>,

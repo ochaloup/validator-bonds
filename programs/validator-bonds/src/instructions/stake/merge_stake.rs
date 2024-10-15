@@ -11,7 +11,7 @@ use anchor_lang::{
 };
 use anchor_spl::stake::{Stake, StakeAccount};
 
-#[derive(AnchorDeserialize, AnchorSerialize)]
+#[derive(Debug, AnchorDeserialize, AnchorSerialize)]
 pub struct MergeStakeArgs {
     pub settlement: Pubkey,
 }

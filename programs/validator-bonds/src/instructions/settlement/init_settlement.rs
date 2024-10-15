@@ -6,7 +6,7 @@ use crate::state::settlement::{find_settlement_staker_authority, Bumps, Settleme
 use crate::state::settlement_claims::{account_initialization_size, SettlementClaims};
 use anchor_lang::prelude::*;
 
-#[derive(AnchorDeserialize, AnchorSerialize)]
+#[derive(Debug, AnchorDeserialize, AnchorSerialize)]
 pub struct InitSettlementArgs {
     /// merkle root for this settlement, multiple settlements can be created with the same merkle root,
     /// settlements will be distinguished by the vote_account

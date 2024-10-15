@@ -27,4 +27,3 @@ solana-security-txt = { workspace = true }
 default-env = { workspace = true }
 merkle-tree = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-ahash = "0.8.9"
